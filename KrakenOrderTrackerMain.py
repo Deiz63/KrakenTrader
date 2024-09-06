@@ -1,6 +1,6 @@
 from KrakenCancelOrdersForToken import  token, token_pair, buy_price, stop_loss, get_ticker_data, get_current_price, get_orders, id_matching_order, edit_open_order, cancel_matching_order
 from KrakenCancelOrdersForToken import buy_check, buy_place, sell_check, sell_place, take_profit, take_profit_delta, get_order_price
-from KrakenCancelOrdersForToken import check_balance, get_existing_balance
+from KrakenCancelOrdersForToken import check_balance, get_existing_balance, get_asset_data
 from KrakenOhlcvDataUtilityCSV import get_low_data
 from colorama import Fore, Style
 from time import sleep
@@ -46,7 +46,6 @@ while True:
     # Actions to be performed in response to STATUS check.
     #get_orders(token_pair)
     orders = get_orders(token_pair)
-    check_balance(token)
     token_balance = check_balance(token)
     if status == 'Sell-Check':
         current_price = get_current_price(token_pair)
@@ -57,9 +56,10 @@ while True:
             pass
         sell_check(current_price, orders, buy_price, take_profit_delta, token_balance)
     elif status == 'Sell-Place':
-        sell_place(stop_loss, token_pair, token_balance)
+        sell_place(take_profit, token_pair, token_balance)
     elif status == 'Buy-Check':
         low_10_latest = get_low_data(token_pair)
+        buy_price = low_10_latest
         # TODO: edit buy order to use low10 data
         buy_check(low_10_latest, orders, token_pair)
     elif status == 'Buy-Place':
@@ -69,24 +69,6 @@ while True:
     delay_interval = 240
     print(Fore.BLUE + f'------- Sleeping for {delay_interval} seconds before next status update --------' + Style.RESET_ALL)
     sleep(delay_interval) # Sleep delay before Running again.
-
-
-
-
-
-
-# Get Listing of orders
-#orders = get_orders(token_pair)
-
-# Find orders matching token pair
-#id_matching_order(token_pair, orders)
-
-# Edit matching orders. 
-#edit_open_order(token_pair, orders) # Add price as parameter
-
-# Cancel matching orders.
-#cancel_matching_order(token_pair, orders)
-
 
 
 
