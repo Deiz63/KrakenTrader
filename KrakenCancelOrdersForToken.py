@@ -2,7 +2,6 @@ from KrakenAPI import api_key, secret_key # Import your API keys
 from kraken.spot import User, Trade, Market
 from colorama import Fore, Style
 from time import sleep
-from KrakenAssetPairs import get_asset_data
 # TODO: check rounding & (decimals) for all lines, verify correct
 # TODO: Need to get correct Buy vs Low_10 vs purchased, 
 # set edit thresholds - create variables?
@@ -10,7 +9,7 @@ from KrakenAssetPairs import get_asset_data
 bought_price = None 
 
 token = 'CQT'               # TODO: 
-buy_price = .044              # TODO: Enter Desired Buy Price
+buy_price = .0045              # TODO: Enter Desired Buy Price
 # Above is the initial desired buy price.
 # Once an order is placed, the actual order price will be used. 
 # TODO: CHECK IF THE FOLLOWING LINE IS WORKING, edit & change location if not successful. 
@@ -23,6 +22,17 @@ take_profit_value = .015       # TODO: tpv * 100 = TP percent
 
 # Gather token data
 token_pair = f'{token}USD'
+
+def get_asset_data(token_pair):
+    print('Get Asset Pair details, decimals, min order, etc.')
+    data = Market().get_asset_pairs(pair=token_pair)
+    # Check decimals pair vs. cost ???
+    pair_decimals = data[token_pair]['pair_decimals']   # 0 - for prices in this pair
+    cost_decimals = data[token_pair]['cost_decimals']   # 1 - cost of trades in pair (quote asset terms)
+    lot_decimals = data[token_pair]['lot_decimals']     # 2 - volume (base asset terms)
+    ordermin = data[token_pair]['ordermin']             # 3 - Min order size
+    return pair_decimals, cost_decimals, lot_decimals, ordermin
+
 asset_data = get_asset_data(token_pair)
 # Calculations - Price / Volume
 order_min = float(asset_data[3])                # Decimals for Order Min
@@ -42,6 +52,7 @@ volume_to_order = round((volume_calc), volume_round_value)
 
 trigger_price = round(stop_loss - (.25 * stop_loss_delta), price_round_value)
 limit_price = round(stop_loss, price_round_value)
+
 
 def check_balance(token):     # check_balance
     user = User(key=api_key, secret=secret_key)
@@ -221,7 +232,7 @@ def sell_check(current_price, orders, buy_price, take_profit_delta, token_balanc
             create_take_profit_order(take_profit, token_pair, token_balance)
             print(Fore.GREEN + f'New TAKE PROFIT ORDER Created - Take Profit @ {take_profit}' + Style.RESET_ALL)   
     if current_price < sl_threshold:
-        print(Fore.CYAN + 'Assure that STOP LOSS price is on ORDER' + Style.RESET_ALL)
+        print(Fore.CYAN + f'SL Threshold Reached @ {sl_threshold} Current = {current_price}.Assure that STOP LOSS price is on ORDER' + Style.RESET_ALL)
         edit_price = stop_loss
         print(f'order_price = {order_price}, stop_loss = {stop_loss}, trigger_price = {trigger_price}')
         if order_price == stop_loss or order_price == trigger_price:
@@ -232,7 +243,9 @@ def sell_check(current_price, orders, buy_price, take_profit_delta, token_balanc
             print(Fore.RED + f'CANCEL order and create Stop Loss Order - stop loss = {stop_loss}' + Style.RESET_ALL)                                                         
     else:
         print('Within SELL orders thresholds, no change. ')    
-def sell_place(stop_loss, token_pair, token_balance):
+    return bought_price
+    
+def sell_place(take_profit, token_pair, token_balance):
     # order_volume = token_balance 
     print('Run Sell-Place Function')
     print(Fore.RED + 'Place SELL order.' + Style.RESET_ALL)
